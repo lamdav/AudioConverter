@@ -41,5 +41,9 @@ setup(name='AudioConverter',
         'pydub==0.22.1'
       ],
       keywords=['audioconverter audio converter CLI'],
-      include_package_data=True
+      include_package_data=True,
+      project_urls={
+        'Bug Reports': 'https://github.com/lamdaV/AudioConverter/issues',
+        'Source': 'https://github.com/lamdaV/AudioConverter'
+      }
 )
