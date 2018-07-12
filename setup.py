@@ -10,8 +10,8 @@ with open(readme_path, encoding='utf-8', mode='r') as f:
 
 setup(name='AudioConverter',
       use_scm_version={'root': '.', 'relative_to': __file__},
-      setup_requires=['setuptools_scm']
-      desciption='Audio Converter CLI',
+      setup_requires=['setuptools_scm'],
+      description='Audio Converter CLI',
       long_description=long_description,
       long_description_content_type='text/markdown',
       author='lamdav',
@@ -40,6 +40,6 @@ setup(name='AudioConverter',
         'colorama==0.3.9',
         'pydub==0.22.1'
       ],
-      keywords=['audioconverter audio converter CLI']
+      keywords=['audioconverter audio converter CLI'],
       include_package_data=True
 )
