@@ -7,6 +7,7 @@ AUDIO_EXTENSIONS = ['.mp3', '.flac', '.aiff', '.mp4', '.m4a']
 
 
 @click.group()
+@click.version_option()
 @click.option('--verbose', '-v', is_flag=True, help='Enable Verbose Logging')
 @click.pass_context
 def cli(context, verbose):
@@ -39,6 +40,8 @@ def convert(context, input_directory, output_directory, output_format):
     verbose('Input : {}'.format(input_path.as_posix()), config['verbose'])
     verbose('Output: {}'.format(output_path.as_posix()), config['verbose'])
 
+    # Verify arguements: input must be a directory and
+    # output must not be an existing file
     if not input_path.is_dir():
         error('Input path {} is not an existing directory'.format(input_path.as_posix()))
         exit(1)
@@ -51,12 +54,7 @@ def convert(context, input_directory, output_directory, output_format):
                 config['verbose'])
         output_path.mkdir(exist_ok=True)
 
-    audio_files = []
-    for input_file in input_path.iterdir():
-        if input_file.is_file() and input_file.suffix.lower() in AUDIO_EXTENSIONS:
-            audio_files.append(input_file)
-        elif input_file.is_dir()
-    audio_files = [x for x in input_path.iterdir() if x.is_file() and x.suffix.lower() in AUDIO_EXTENSIONS]
+    audio_files = get_audio_files(input_path)
     audio_files = list(map(lambda x: {
                                 'output_format': output_format,
                                 'verbose': config['verbose'],
@@ -67,6 +65,19 @@ def convert(context, input_directory, output_directory, output_format):
         worker.map(converter, audio_files)
 
     success('See {} for converted audio.'.format(output_directory))
+
+
+def get_audio_files(input_path):
+    """
+    Recursively get audio files within the input_path.
+    """
+    audio_files = []
+    for input_file in input_path.iterdir():
+        if input_file.is_file() and input_file.suffix.lower() in AUDIO_EXTENSIONS:
+            audio_files.append(input_file)
+        elif input_file.is_dir() and not input_file.is_symlink():
+            audio_files += get_audio_files(input_file)
+    return audio_files
 
 
 def converter(audio_datum):
