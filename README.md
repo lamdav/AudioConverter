@@ -20,6 +20,11 @@ Go follow the `pydub`
 [tutorial](https://github.com/jiaaro/pydub#getting-ffmpeg-set-up)
 on how to set up `ffmpeg` on the various platforms.
 
+### Install CLI
+```shell
+pip install --upgrade AudioConverter
+```
+
 ## Usage
 ```shell
 audioconvert [--verbose/-v] convert INPUT_DIRECTORY OUTPUT_DIRECTORY [--output-format/-o TARGET_FORMAT]
