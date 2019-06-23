@@ -1,4 +1,4 @@
-workflow "test and publish on tag" {
+workflow "format and publish on tag" {
   on = "push"
   resolves = ["pypi"]
 }
