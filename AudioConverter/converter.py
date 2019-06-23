@@ -6,6 +6,7 @@ import click
 from pydub import AudioSegment
 
 AUDIO_EXTENSIONS = [".mp3", ".flac", ".aiff", ".mp4", ".m4a"]
+AUDIO_EXTENSIONS_SET = set(AUDIO_EXTENSIONS)
 
 
 class Logger(object):
@@ -151,7 +152,7 @@ def get_audio_files(input_path: pathlib.Path) -> Sequence[pathlib.Path]:
     """
     audio_files = []
     for input_file in input_path.iterdir():
-        if input_file.is_file() and input_file.suffix.lower() in AUDIO_EXTENSIONS:
+        if input_file.is_file() and input_file.suffix.lower() in AUDIO_EXTENSIONS_SET:
             audio_files.append(input_file)
         elif input_file.is_dir() and not input_file.is_symlink():
             audio_files.extend(get_audio_files(input_file))
