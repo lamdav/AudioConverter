@@ -16,7 +16,7 @@ def deploy() -> None:
     cleanup_dist_if_exists(dist_path)
     create_dist(dist_path)
     upload(dist_path)
-    print('deploy successfully completed')
+    print("deploy successfully completed")
     sys.exit(0)
 
 
@@ -26,13 +26,17 @@ def check_python_version() -> None:
 
     :return: None
     """
-    print('checking python version...', end='')
+    print("checking python version...", end="")
     version_info = sys.version_info
     if version_info.major < 3 or version_info.minor < 5:
-        print('Python version must be 3.5+ but got {}.{}'.format(version_info.major, version_info.minor))
-        print('FAIL')
+        print(
+            "Python version must be 3.5+ but got {}.{}".format(
+                version_info.major, version_info.minor
+            )
+        )
+        print("FAIL")
         sys.exit(1)
-    print('PASS')
+    print("PASS")
 
 
 def get_dist_path() -> pathlib.Path:
@@ -42,7 +46,7 @@ def get_dist_path() -> pathlib.Path:
     :return: None
     """
     script_path = pathlib.Path(os.path.dirname(os.path.realpath(__file__)))
-    return script_path.parent.joinpath('dist')
+    return script_path.parent.joinpath("dist")
 
 
 def cleanup_dist_if_exists(dist_path: pathlib.Path) -> None:
@@ -52,14 +56,12 @@ def cleanup_dist_if_exists(dist_path: pathlib.Path) -> None:
     :param dist_path: Path to dist directory
     :return: None
     """
-    print('checking for existing dist directory...', end='')
+    print("checking for existing dist directory...", end="")
     if dist_path.exists():
         dist_posix = dist_path.as_posix()
-        print('cleaning up {}...'.format(dist_posix), end='')
+        print("cleaning up {}...".format(dist_posix), end="")
         shutil.rmtree(dist_posix)
-        print('PASS')
-        return
-    print('PASS')
+    print("PASS")
 
 
 def create_dist(dist_path: pathlib.Path) -> None:
@@ -69,16 +71,16 @@ def create_dist(dist_path: pathlib.Path) -> None:
     :param dist_path: Path to dist directory
     :return: None
     """
-    print('creating distribution...', end='')
+    print("creating distribution...", end="")
     dist_posix = dist_path.as_posix()
-    dist_option = '--dist-dir={}'.format(dist_posix)
-    command = ['python3', 'setup.py', 'bdist_wheel', dist_option]
+    dist_option = "--dist-dir={}".format(dist_posix)
+    command = ["python3", "setup.py", "bdist_wheel", dist_option]
     distribution = subprocess.run(command, stdout=subprocess.PIPE)
     if distribution.returncode != 0:
-        print('FAIL')
-        print(distribution.stdout.decode('utf-8'))
+        print("FAIL")
+        print(distribution.stdout.decode("utf-8"))
         sys.exit(1)
-    print('PASS')
+    print("PASS")
 
 
 def upload(dist_path: pathlib.Path) -> None:
@@ -88,18 +90,18 @@ def upload(dist_path: pathlib.Path) -> None:
     :param dist_path: Path to dist directory
     :return: None
     """
-    print('uploading distribution...', end='')
-    all_dist_path = dist_path.joinpath('*')
+    print("uploading distribution...", end="")
+    all_dist_path = dist_path.joinpath("*")
     all_dist_posix = all_dist_path.as_posix()
 
-    command = ['twine', 'upload', all_dist_posix]
+    command = ["twine", "upload", all_dist_posix]
     result = subprocess.run(command, stdout=subprocess.PIPE)
     if result.returncode != 0:
-        print('FAIL')
-        print(result.stdout.decode('utf-8'))
+        print("FAIL")
+        print(result.stdout.decode("utf-8"))
         sys.exit(1)
-    print('PASS')
+    print("PASS")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     deploy()
