@@ -34,6 +34,7 @@ setup(
         "Topic :: Utilities",
     ],
     install_requires=["click==7.0", "colorama==0.4.1", "pydub==0.23.1"],
+    extra_requires={"dev": {"black==19.10b0", "isort==4.3.21", "pip-tools==4.3.0"}},
     keywords=["audioconverter audio converter CLI"],
     include_package_data=True,
     project_urls={
