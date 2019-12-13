@@ -104,9 +104,16 @@ def cli(context: click.Context, verbose: bool):
     default=".mp3",
     help="Target output format",
 )
+@click.option(
+    "--workers", "-w", type=int, default=5, help="Number of worker processes to run"
+)
 @click.pass_obj
 def convert(
-    config: Config, input_directory: str, output_directory: str, output_format: str
+    config: Config,
+    input_directory: str,
+    output_directory: str,
+    output_format: str,
+    workers: int,
 ):
     """
     Convert Input Directory Audio to Output Directory Audio
@@ -119,6 +126,7 @@ def convert(
 
     logger.verbose("Input : {}".format(input_path.as_posix()), config.verbose)
     logger.verbose("Output: {}".format(output_path.as_posix()), config.verbose)
+    logger.verbose("Workers: {}".format(workers), config.verbose)
 
     if not output_path.exists():
         logger.verbose(
@@ -128,19 +136,17 @@ def convert(
         output_path.mkdir(exist_ok=True)
 
     audio_files = get_audio_files(input_path)
-    audio_files = list(
-        map(
-            lambda file_path: ConversionJob(
-                output_format=output_format,
-                verbose=config.verbose,
-                output_path=output_path,
-                file_path=file_path,
-                logger=logger,
-            ),
-            audio_files,
+    audio_files = [
+        ConversionJob(
+            output_format=output_format,
+            verbose=config.verbose,
+            output_path=output_path,
+            file_path=file_path,
+            logger=logger,
         )
-    )
-    with Pool(processes=5) as worker:
+        for file_path in audio_files
+    ]
+    with Pool(processes=workers) as worker:
         worker.map(converter, audio_files)
 
     logger.success("See {} for converted audio.".format(output_path.as_posix()))
