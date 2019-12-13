@@ -15,7 +15,7 @@ jobs:
       - uses: actions/checkout@master
       - name: pypi
         uses: ./.github/actions/pypi
-        if: startsWith(github.ref, "refs/tags/")
+        if: startsWith(github.ref, '/refs/tags/')
         env:
           TWINE_USERNAME: ${{ secrets.TWINE_USERNAME }}
           TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
