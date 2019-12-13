@@ -1,6 +1,6 @@
 import pathlib
 from multiprocessing import Pool
-from typing import Sequence, Optional
+from typing import Optional, Sequence
 
 import click
 from pydub import AudioSegment

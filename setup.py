@@ -1,7 +1,7 @@
 import os
 import pathlib
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 setup_path = pathlib.Path(os.path.dirname(os.path.relpath(__file__)))
 readme_path = setup_path.joinpath("README.md").as_posix()
