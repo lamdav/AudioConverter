@@ -5,7 +5,14 @@ from typing import Optional, Sequence
 import click
 from pydub import AudioSegment
 
-AUDIO_EXTENSIONS = [".mp3", ".flac", ".aiff", ".mp4", ".m4a"]
+AUDIO_EXTENSIONS = [
+    ".aiff",
+    ".flac",
+    ".m4a",
+    ".mp3",
+    ".mp4",
+    ".wav",
+]
 AUDIO_EXTENSIONS_SET = set(AUDIO_EXTENSIONS)
 
 
