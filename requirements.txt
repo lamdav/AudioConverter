@@ -4,6 +4,6 @@
 #
 #    pip-compile
 #
-click==7.0
-colorama==0.4.1
-pydub==0.23.1
+click==7.1.2
+colorama==0.4.3
+pydub==0.24.0
