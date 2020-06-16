@@ -36,6 +36,14 @@ placed in the `OUTPUT_DIRECTORY` with the same name but updated extension.
 The `--verbose/-v` flag must be provided before the `convert` command. This
 will enable debugging logs and allow you to monitor progress.
 
+For example - to convert the contents of the directory `input/`, containing 
+files of type `.m4a` and `.flac`, outputting to directory `output/`, converting 
+to type `.mp3` run:
+
+```shell
+audioconvert convert input/ output/ --output-format .mp3
+```
+
 ## Accepted Formats
 Due to not being super savvy with audio formats, I hard coded the extensions
 that are searched for in the `INPUT_DIRECTORY` and acceptable `TARGET_FORMAT`.
@@ -45,3 +53,4 @@ Here is a list of formats I thought were popular:
 - .aiff
 - .mp4
 - .m4a
+
