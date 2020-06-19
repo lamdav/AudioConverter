@@ -36,8 +36,8 @@ placed in the `OUTPUT_DIRECTORY` with the same name but updated extension.
 The `--verbose/-v` flag must be provided before the `convert` command. This
 will enable debugging logs and allow you to monitor progress.
 
-For example - to convert the contents of the directory `input/`, containing 
-files of type `.m4a` and `.flac`, outputting to directory `output/`, converting 
+For example - to convert the contents of the directory `input/`, containing
+files of type `.m4a` and `.flac`, outputting to directory `output/`, converting
 to type `.mp3` run:
 
 ```shell
@@ -53,4 +53,4 @@ Here is a list of formats I thought were popular:
 - .aiff
 - .mp4
 - .m4a
-
+- .wav
