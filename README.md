@@ -1,4 +1,6 @@
 # AudioConverter
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
 A simple CLI to convert a directory of audio files from  one format
 to another. This CLI sits ontop of `pydub` and `ffmpeg`
 
