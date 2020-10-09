@@ -1,4 +1,4 @@
-FROM python:3.7-alpine
+FROM python:3.8-alpine
 
 RUN apk add --no-cache \
   bash \
@@ -10,7 +10,7 @@ RUN apk add --no-cache \
   openssl-dev
 
 RUN pip install --upgrade pip
-RUN pip install --upgrade setuptools wheel twine
+RUN pip install --upgrade setuptools twine wheel
 
 RUN python --version
 RUN pip --version

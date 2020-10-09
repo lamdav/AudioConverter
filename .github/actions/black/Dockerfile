@@ -1,4 +1,4 @@
-FROM python:3.7-alpine
+FROM python:3.8-alpine
 
 RUN apk add --no-cache \
   bash \
@@ -9,7 +9,7 @@ RUN apk add --no-cache \
   musl-dev
 
 RUN pip install --upgrade pip
-RUN pip install --upgrade black==19.10b0
+RUN pip install --upgrade black==20.8b1
 
 RUN python --version
 RUN pip --version
