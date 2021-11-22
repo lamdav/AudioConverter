@@ -12,6 +12,7 @@ AUDIO_EXTENSIONS = [
     ".mp3",
     ".mp4",
     ".wav",
+    ".ogg",
 ]
 AUDIO_EXTENSIONS_SET = set(AUDIO_EXTENSIONS)
 
