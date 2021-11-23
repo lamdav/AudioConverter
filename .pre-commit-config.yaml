@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v3.2.0
+    rev: v4.0.1
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
@@ -8,10 +8,10 @@ repos:
       - id: check-yaml
       - id: requirements-txt-fixer
   - repo: https://github.com/pre-commit/mirrors-isort
-    rev: v5.6.1
+    rev: v5.9.3
     hooks:
       - id: isort
   - repo: https://github.com/psf/black
-    rev: 20.8b1
+    rev: 21.11b1
     hooks:
       - id: black
