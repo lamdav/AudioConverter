@@ -1,10 +1,12 @@
 # AudioConverter
+
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-A simple CLI to convert a directory of audio files from  one format
+A simple CLI to convert a directory of audio files from one format
 to another. This CLI sits ontop of `pydub` and `ffmpeg`
 
 ## Motivation
+
 I have some old music in a lossless format. Now that I am constantly
 jumping between computers, I wanted it to be converted in
 a more universal format such as `mp3` so that I can play it with
@@ -17,21 +19,26 @@ be converted on some server and download it again either. Instead, I wrote
 this quick CLI to do it for me.
 
 ## Setup
+
 ### Install `ffmpeg`
+
 Go follow the `pydub`
 [tutorial](https://github.com/jiaaro/pydub#getting-ffmpeg-set-up)
 on how to set up `ffmpeg` on the various platforms.
 
 ### Install CLI
+
 ```shell
 pip install --upgrade AudioConverter
 ```
 
 ## Usage
+
 ```shell
-audioconvert [--verbose/-v] convert INPUT_DIRECTORY OUTPUT_DIRECTORY [--output-format/-o TARGET_FORMAT]
+audioconvert [--verbose/-v] convert INPUT_PATH OUTPUT_DIRECTORY [--output-format/-o TARGET_FORMAT]
 ```
-This will recursively search the `INPUT_DIRECTORY` for files with music
+
+If a directory is provided, his will recursively search the `INPUT_PATH` for files with music
 extensions. Each file found will then be converted to the `TARGET_FORMAT` and
 placed in the `OUTPUT_DIRECTORY` with the same name but updated extension.
 
@@ -47,9 +54,11 @@ audioconvert convert input/ output/ --output-format .mp3
 ```
 
 ## Accepted Formats
+
 Due to not being super savvy with audio formats, I hard coded the extensions
 that are searched for in the `INPUT_DIRECTORY` and acceptable `TARGET_FORMAT`.
 Here is a list of formats I thought were popular:
+
 - .mp3
 - .flac
 - .aiff
