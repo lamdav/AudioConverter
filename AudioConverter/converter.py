@@ -99,8 +99,8 @@ def cli(context: click.Context, verbose: bool):
 
 @cli.command()
 @click.argument(
-    "input_directory",
-    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=str),
+    "input_path",
+    type=click.Path(exists=True, file_okay=True, dir_okay=True, path_type=str),
 )
 @click.argument(
     "output_directory", type=click.Path(file_okay=False, dir_okay=True, path_type=str)
@@ -118,7 +118,7 @@ def cli(context: click.Context, verbose: bool):
 @click.pass_obj
 def convert(
     config: Config,
-    input_directory: str,
+    input_path: str,
     output_directory: str,
     output_format: str,
     workers: int,
@@ -127,9 +127,9 @@ def convert(
     Convert Input Directory Audio to Output Directory Audio
     """
     logger = config.logger
-    logger.info("Starting conversion of {}.".format(input_directory))
+    logger.info("Starting conversion of {}.".format(input_path))
 
-    input_path = pathlib.Path(input_directory)
+    input_path = pathlib.Path(input_path)
     output_path = pathlib.Path(output_directory)
 
     logger.verbose("Input : {}".format(input_path.as_posix()), config.verbose)
@@ -165,11 +165,15 @@ def get_audio_files(input_path: pathlib.Path) -> Sequence[pathlib.Path]:
     Recursively get audio files within the input_path.
     """
     audio_files = []
-    for input_file in input_path.iterdir():
-        if input_file.is_file() and input_file.suffix.lower() in AUDIO_EXTENSIONS_SET:
-            audio_files.append(input_file)
-        elif input_file.is_dir() and not input_file.is_symlink():
-            audio_files.extend(get_audio_files(input_file))
+    if input_path.is_file():
+        if input_path.suffix.lower() in AUDIO_EXTENSIONS_SET:
+            audio_files.append(input_path)
+    else:
+        for input_file in input_path.iterdir():
+            if input_file.is_file() and input_file.suffix.lower() in AUDIO_EXTENSIONS_SET:
+                audio_files.append(input_file)
+            elif input_file.is_dir() and not input_file.is_symlink():
+                audio_files.extend(get_audio_files(input_file))
     return audio_files
 
 
