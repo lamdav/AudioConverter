@@ -46,6 +46,16 @@ to type `.mp3` run:
 audioconvert convert input/ output/ --output-format .mp3
 ```
 
+### Experimental
+Audio can be passed to be converted to specific codecs. This is an experimental now feature
+as it has no error checking that certain codecs are compatible with your desired output
+audio format. Depending on `ffmpeg` and/or `pydub`, there may or may not be error logging.
+
+To use the new experimental feature:
+```shell
+audioconvert convert input/ output/ --output-format .wav --codec pcm_mulaw
+```
+
 ## Accepted Formats
 Due to not being super savvy with audio formats, I hard coded the extensions
 that are searched for in the `INPUT_DIRECTORY` and acceptable `TARGET_FORMAT`.
@@ -57,3 +67,6 @@ Here is a list of formats I thought were popular:
 - .m4a
 - .wav
 - .ogg
+
+## Supported Codec
+- pcm_mulaw

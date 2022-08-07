@@ -15,6 +15,10 @@ AUDIO_EXTENSIONS = [
     ".ogg",
 ]
 AUDIO_EXTENSIONS_SET = set(AUDIO_EXTENSIONS)
+CODEC = [
+    "pcm_mulaw",
+]
+CODEC_SET = set(CODEC)
 
 
 class Logger(object):
@@ -69,17 +73,26 @@ class ConversionJob(object):
     Details related to audio conversion jobs
     """
 
-    __slots__ = ["output_format", "verbose", "output_path", "file_path", "logger"]
+    __slots__ = [
+        "output_format",
+        "codec",
+        "verbose",
+        "output_path",
+        "file_path",
+        "logger",
+    ]
 
     def __init__(
         self,
         output_format: str,
+        codec: Optional[str],
         verbose: bool,
         output_path: pathlib.Path,
         file_path: pathlib.Path,
         logger: Optional[Logger] = None,
     ):
         self.output_format = output_format
+        self.codec = codec
         self.verbose = verbose
         self.output_path = output_path
         self.file_path = file_path
@@ -113,6 +126,13 @@ def cli(context: click.Context, verbose: bool):
     help="Target output format",
 )
 @click.option(
+    "--codec",
+    "-c",
+    type=click.Choice(CODEC),
+    default=None,
+    help="Codec to covert to",
+)
+@click.option(
     "--workers", "-w", type=int, default=5, help="Number of worker processes to run"
 )
 @click.pass_obj
@@ -121,6 +141,7 @@ def convert(
     input_directory: str,
     output_directory: str,
     output_format: str,
+    codec: Optional[str],
     workers: int,
 ):
     """
@@ -147,6 +168,7 @@ def convert(
     audio_files = [
         ConversionJob(
             output_format=output_format,
+            codec=codec,
             verbose=config.verbose,
             output_path=output_path,
             file_path=file_path,
@@ -191,6 +213,7 @@ def converter(conversion_job: ConversionJob):
     output_format = conversion_job.output_format[1:]  # ignore "." prefix
     output_path = conversion_job.output_path
     verbose_flag = conversion_job.verbose
+    codec = conversion_job.codec
 
     # File specific data
     audio_file = conversion_job.file_path
@@ -202,6 +225,20 @@ def converter(conversion_job: ConversionJob):
     )
     audio = AudioSegment.from_file(audio_file.as_posix(), audio_file.suffix[1:])
     output_name = output_path.joinpath(converted_name)
-    audio.export(output_name.as_posix(), format=output_format, bitrate="192k")
+    parameters = get_parameters(output_format, codec)
+
+    audio.export(
+        output_name.as_posix(),
+        format=output_format,
+        bitrate="192k",
+        codec=codec,
+        parameters=parameters,
+    )
 
     logger.verbose("{} converted".format(audio_name), verbose_flag)
+
+
+def get_parameters(output_format: str, codec: Optional[str]) -> Optional[Sequence[str]]:
+    if codec == "pcm_mulaw":
+        return ["-ar", "8000"]
+    return None

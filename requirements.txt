@@ -1,9 +1,9 @@
-click==8.0.3 \
+click==7.1.2; (python_version >= "2.7" and python_full_version < "3.0.0") or (python_full_version >= "3.5.0") \
     --hash=sha256:dacca89f4bfadd5de3d7489b7c8a566eee0d3676333fbb50030263894c38c0dc \
     --hash=sha256:d2b5255c7c6349bc1bd1e59e08cd12acbbd63ce649f2588755783aa94dfb6b1a
-colorama==0.4.4 \
-    --hash=sha256:7d73d2a99753107a36ac6b455ee49046802e59d9d076ef8e47b61499fa29afff \
-    --hash=sha256:e96da0d330793e2cb9485e9ddfd918d456036c7149416295932478192f4436a1
-pydub==0.25.1 \
+colorama==0.4.5; (python_version >= "2.7" and python_full_version < "3.0.0") or (python_full_version >= "3.5.0") \
+    --hash=sha256:854bf444933e37f5824ae7bfc1e98d5bce2ebe4160d46b5edf346a89358e99da \
+    --hash=sha256:e6c6b4334fc50988a639d9b98aa429a0b57da6e17b9a44f0451f930b6967b7a4
+pydub==0.24.1 \
     --hash=sha256:25fdfbbfd4c69363006a27c7bd2346c4b886a0dd3da264c14d858b71a9593284 \
     --hash=sha256:630c68bfff9bb27cbc5e1f02923f717c3bc5f4d73fd685fda08b6ce90f76dc69
