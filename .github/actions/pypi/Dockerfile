@@ -12,7 +12,7 @@ RUN apk add --no-cache \
 RUN pip install --upgrade pip
 RUN pip install --upgrade pipx
 RUN pipx install poetry
-RUN export PATH=$PATH:/root/.local/bin
+ENV PATH=$PATH:/root/.local/bin
 
 RUN python --version
 RUN pip --version
