@@ -17,5 +17,5 @@ jobs:
         uses: ./.github/actions/pypi
         if: startsWith(github.ref, 'refs/tags/')
         env:
-          TWINE_USERNAME: ${{ secrets.TWINE_USERNAME }}
-          TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
+          POETRY_HTTP_BASIC_PYPI_USERNAME: ${{ secrets.TWINE_USERNAME }}
+          POETRY_HTTP_BASIC_PYPI_PASSWORD: ${{ secrets.TWINE_PASSWORD }}

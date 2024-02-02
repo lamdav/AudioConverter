@@ -1,4 +1,4 @@
-FROM python:3.9-alpine
+FROM python:3.12-alpine
 
 RUN apk add --no-cache \
   bash \
@@ -10,11 +10,13 @@ RUN apk add --no-cache \
   openssl-dev
 
 RUN pip install --upgrade pip
-RUN pip install --upgrade setuptools twine wheel
+RUN pip install --upgrade pipx
+RUN pipx install poetry
 
 RUN python --version
 RUN pip --version
-RUN twine --version
+RUN pipx --version
+RUN poetry --version
 
 COPY ./entrypoint.sh /
 RUN chmod +x /entrypoint.sh
