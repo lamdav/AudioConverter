@@ -6,8 +6,7 @@ echo "#########################################"
 echo "Starting ${GITHUB_WORKFLOW}:${GITHUB_ACTION}"
 
 rm -rf ./dist
-python setup.py sdist bdist_wheel
-twine upload dist/*
+poetry publish --build 
 
 echo "#########################################"
 echo "Completed ${GITHUB_WORKFLOW}:${GITHUB_ACTION}"
