@@ -145,19 +145,6 @@ docs = ["furo (>=2023.9.10)", "proselint (>=0.13)", "sphinx (>=7.2.6)", "sphinx-
 test = ["appdirs (==1.4.4)", "covdefaults (>=2.3)", "pytest (>=7.4.3)", "pytest-cov (>=4.1)", "pytest-mock (>=3.12)"]
 
 [[package]]
-name = "pur"
-version = "7.3.1"
-description = "Update packages in a requirements.txt file to latest versions."
-optional = false
-python-versions = "*"
-files = [
-    {file = "pur-7.3.1.tar.gz", hash = "sha256:ac693e4c1b7c8fa376b198ce797488befa65f0965ce13b4a8659fd44113a24ba"},
-]
-
-[package.dependencies]
-click = ">=8.0.0"
-
-[[package]]
 name = "pydub"
 version = "0.24.1"
 description = "Manipulate audio with an simple and easy high level interface"
@@ -193,4 +180,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "146a5f8dc21e294c44bfb04fa8a9bfde05514ca44b89f32e3c60f20c8d953807"
+content-hash = "61f150997c271f93c40912a78ad649087b92d39a38d85c1cf38879f7a49fa794"

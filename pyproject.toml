@@ -51,7 +51,6 @@ pydub = "^0.24.1"
 black = "^24.1.1"
 bump2version = "^1.0.1"
 isort = "^5.13.2"
-pur = "^7.3.1"
 
 
 [tool.isort]
