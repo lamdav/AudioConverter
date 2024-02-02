@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "audioconverter"
-version = "1.0.0"
+version = "2.0.0"
 description = "CLI for converting audio files from one format to another"
 authors = ["David Lam <david.lam@lamdav.com>"]
 license = "MIT"
@@ -59,5 +59,5 @@ profile = "black"
 
 
 [build-system]
-requires = ["poetry-core>=1.0.0", "setuptools", "setuptools_scm"]
+requires = ["poetry-core>=2.0.0", "setuptools", "setuptools_scm"]
 build-backend = "poetry.core.masonry.api"
