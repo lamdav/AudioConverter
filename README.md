@@ -29,7 +29,7 @@ pip install --upgrade AudioConverter
 
 ## Usage
 ```shell
-audioconvert [--verbose/-v] convert INPUT_DIRECTORY OUTPUT_DIRECTORY [--output-format/-o TARGET_FORMAT]
+audioconvert [--verbose/-v] convert INPUT_DIRECTORY OUTPUT_DIRECTORY [--output-format/-o TARGET_FORMAT] [--output-bitrate/-b OUTPUT_BITRATE]
 ```
 This will recursively search the `INPUT_DIRECTORY` for files with music
 extensions. Each file found will then be converted to the `TARGET_FORMAT` and
@@ -40,10 +40,10 @@ will enable debugging logs and allow you to monitor progress.
 
 For example - to convert the contents of the directory `input/`, containing
 files of type `.m4a` and `.flac`, outputting to directory `output/`, converting
-to type `.mp3` run:
+to type `.mp3`, with bitrate `192k` run:
 
 ```shell
-audioconvert convert input/ output/ --output-format .mp3
+audioconvert convert input/ output/ --output-format .mp3 --output-bitrate 192k
 ```
 
 ### Experimental
@@ -67,6 +67,14 @@ Here is a list of formats I thought were popular:
 - .m4a
 - .wav
 - .ogg
+
+## Accepted Bitrates
+- 320k
+- 256k
+- 192k
+- 128k
+-  96k
+-  64k
 
 ## Supported Codec
 - pcm_mulaw

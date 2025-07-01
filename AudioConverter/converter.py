@@ -20,6 +20,16 @@ CODEC = [
 ]
 CODEC_SET = set(CODEC)
 
+BITRATE = [
+    "320k",
+    "256k",
+    "192k",
+    "128k",
+    "96k",
+    "64k",
+]
+BITRATE_SET = set(BITRATE)
+
 
 class Logger(object):
     def success(self, message: str):
@@ -61,10 +71,11 @@ class Config(object):
     CLI global configurations
     """
 
-    __slots__ = ["verbose", "logger"]
+    __slots__ = ["verbose", "logger", "output_directory_option"]
 
-    def __init__(self, verbose: bool):
+    def __init__(self, verbose: bool, output_directory_option: bool):
         self.verbose = verbose
+        self.output_directory_option = output_directory_option
         self.logger = Logger()
 
 
@@ -74,7 +85,10 @@ class ConversionJob(object):
     """
 
     __slots__ = [
+        "input_directory_base",
         "output_format",
+        "output_bitrate",
+        "output_directory_option",
         "codec",
         "verbose",
         "output_path",
@@ -84,14 +98,20 @@ class ConversionJob(object):
 
     def __init__(
         self,
+        input_directory_base: str,
         output_format: str,
+        output_bitrate: str,
+        output_directory_option: bool,
         codec: Optional[str],
         verbose: bool,
         output_path: pathlib.Path,
         file_path: pathlib.Path,
         logger: Optional[Logger] = None,
     ):
+        self.input_directory_base = input_directory_base
         self.output_format = output_format
+        self.output_bitrate = output_bitrate
+        self.output_directory_option = output_directory_option
         self.codec = codec
         self.verbose = verbose
         self.output_path = output_path
@@ -102,12 +122,17 @@ class ConversionJob(object):
 @click.group()
 @click.version_option()
 @click.option("--verbose", "-v", type=bool, is_flag=True, help="Enable Verbose Logging")
+@click.option(
+    "--output-directory-option", 
+    "-od", 
+    type=bool,
+    is_flag=True, help="Create the same directory tree like the input folder")
 @click.pass_context
-def cli(context: click.Context, verbose: bool):
+def cli(context: click.Context, verbose: bool, output_directory_option: bool):
     """
     AudioConverter CLI
     """
-    context.obj = Config(verbose)
+    context.obj = Config(verbose, output_directory_option)
 
 
 @cli.command()
@@ -126,6 +151,13 @@ def cli(context: click.Context, verbose: bool):
     help="Target output format",
 )
 @click.option(
+    "--output-bitrate",
+    "-b",
+    type=click.Choice(BITRATE),
+    default="192k",
+    help="Bitrate to covert to",
+)
+@click.option(
     "--codec",
     "-c",
     type=click.Choice(CODEC),
@@ -141,6 +173,7 @@ def convert(
     input_directory: str,
     output_directory: str,
     output_format: str,
+    output_bitrate: str,
     codec: Optional[str],
     workers: int,
 ):
@@ -167,7 +200,10 @@ def convert(
     audio_files = get_audio_files(input_path)
     audio_files = [
         ConversionJob(
+            input_directory_base=input_directory,
             output_format=output_format,
+            output_bitrate=output_bitrate,
+            output_directory_option=config.output_directory_option,
             codec=codec,
             verbose=config.verbose,
             output_path=output_path,
@@ -211,26 +247,53 @@ def converter(conversion_job: ConversionJob):
 
     # Conversion specific data
     output_format = conversion_job.output_format[1:]  # ignore "." prefix
+    output_bitrate = conversion_job.output_bitrate
     output_path = conversion_job.output_path
+    output_directory_option = conversion_job.output_directory_option
     verbose_flag = conversion_job.verbose
     codec = conversion_job.codec
 
     # File specific data
     audio_file = conversion_job.file_path
     audio_name = audio_file.name[: audio_file.name.rfind(".")]
+    output_path_new = str(audio_file).split(conversion_job.input_directory_base)
+    output_path_new = output_path_new[1].split(audio_file.name)
+
     converted_name = "{}.{}".format(audio_name, output_format)
 
     logger.verbose(
-        "Converting {} to {}".format(audio_name, output_format), verbose_flag
+        "Converting {} to {} new {}".format(audio_name, output_format, output_path_new[0]), verbose_flag
     )
+    
     audio = AudioSegment.from_file(audio_file.as_posix(), audio_file.suffix[1:])
-    output_name = output_path.joinpath(converted_name)
+
+    #if output to a new directory option is on
+    if output_directory_option == True:
+        output_name = output_path.joinpath(str(output_path_new[0]))
+        logger.verbose(
+            "FilePath new from:{} to {}".format(audio_file, output_name), verbose_flag
+        )
+
+        if not output_name.exists():
+            logger.verbose(
+                "Creating output directory {}".format(output_name.as_posix()), verbose_flag
+            )
+    
+            output_name.mkdir(exist_ok=True)
+        output_name = output_name.joinpath(converted_name)
+    else:
+        output_name = output_path.joinpath(converted_name)
+    
     parameters = get_parameters(output_format, codec)
+
+    logger.verbose(
+        "FilePath from:{} to {}".format(audio_file, output_name), verbose_flag
+    )
 
     audio.export(
         output_name.as_posix(),
         format=output_format,
-        bitrate="192k",
+        bitrate=output_bitrate,
         codec=codec,
         parameters=parameters,
     )
