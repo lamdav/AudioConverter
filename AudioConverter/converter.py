@@ -16,6 +16,7 @@ AUDIO_EXTENSIONS = [
     ".mp4",
     ".wav",
     ".ogg",
+    ".opus",
 ]
 AUDIO_EXTENSIONS_SET = set(AUDIO_EXTENSIONS)
 CODEC = [
