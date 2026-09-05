@@ -144,6 +144,7 @@ def cli(context: click.Context, verbose: bool):
     "-d",
     help="Convert files created or modified after this date (ISO 8601 format or POSIX timestamp)"
 )
+@click.option("--flat", type=bool, is_flag=True, help="Flatten directory structure")
 @click.pass_obj
 def convert(
     config: Config,
@@ -152,7 +153,8 @@ def convert(
     output_format: str,
     codec: Optional[str],
     workers: int,
-    after: Optional[str]
+    after: Optional[str],
+    flat: bool
 ):
     """
     Convert Input Directory Audio to Output Directory Audio
@@ -192,7 +194,7 @@ def convert(
             output_format=output_format,
             codec=codec,
             verbose=config.verbose,
-            output_path=output_path,
+            output_path=get_output_path(input_path, output_path, file_path, not flat),
             file_path=file_path,
             logger=logger,
         )
@@ -202,6 +204,15 @@ def convert(
         worker.map(converter, audio_files)
 
     logger.success("See {} for converted audio.".format(output_path.as_posix()))
+
+def get_output_path(input_path: pathlib.Path, output_path: pathlib.Path, file_path: pathlib.Path, preserve_path: bool=True):
+    if not preserve_path or file_path.parts[:len(input_path.parts)] != input_path.parts:
+        return output_path
+    
+    # Get the file_path relative to the input_path, excluding filename
+    file_partial_path = file_path.parts[len(input_path.parts):-1]
+
+    return output_path.joinpath(*file_partial_path)
 
 
 def get_audio_files(input_path: pathlib.Path, after_date: Optional[datetime.datetime]=None) -> Sequence[pathlib.Path]:
@@ -263,6 +274,7 @@ def converter(conversion_job: ConversionJob):
     audio = AudioSegment.from_file(audio_file.as_posix(), audio_file.suffix[1:])
     output_name = output_path.joinpath(converted_name)
     parameters = get_parameters(output_format, codec)
+    output_path.mkdir(parents=True, exist_ok=True)
 
     audio.export(
         output_name.as_posix(),
