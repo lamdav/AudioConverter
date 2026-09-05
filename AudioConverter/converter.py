@@ -1,4 +1,7 @@
+import datetime
+import os
 import pathlib
+import sys
 from multiprocessing import Pool
 from typing import Optional, Sequence
 
@@ -135,6 +138,11 @@ def cli(context: click.Context, verbose: bool):
 @click.option(
     "--workers", "-w", type=int, default=5, help="Number of worker processes to run"
 )
+@click.option(
+    "--after",
+    "-d",
+    help="Convert files created or modified after this date (ISO 8601 format or POSIX timestamp)"
+)
 @click.pass_obj
 def convert(
     config: Config,
@@ -143,6 +151,7 @@ def convert(
     output_format: str,
     codec: Optional[str],
     workers: int,
+    after: Optional[str]
 ):
     """
     Convert Input Directory Audio to Output Directory Audio
@@ -157,6 +166,18 @@ def convert(
     logger.verbose("Output: {}".format(output_path.as_posix()), config.verbose)
     logger.verbose("Workers: {}".format(workers), config.verbose)
 
+    after_date = None
+    if after is not None:
+        if after.isnumeric():
+            after_date = datetime.datetime.fromtimestamp(after)
+        else:
+            try:
+                after_date = datetime.datetime.fromisoformat(after)
+            except:
+                logger.error("Unable to parse after date option. This must be given in ISO 8601 format or as a POSIX timestamp (seconds since 1970-01-01).")
+                sys.exit(1)
+        logger.verbose("After date: {}".format(after_date), config.verbose)
+
     if not output_path.exists():
         logger.verbose(
             "Creating output directory {}".format(output_path.as_posix()),
@@ -164,7 +185,7 @@ def convert(
         )
         output_path.mkdir(exist_ok=True)
 
-    audio_files = get_audio_files(input_path)
+    audio_files = get_audio_files(input_path, after_date)
     audio_files = [
         ConversionJob(
             output_format=output_format,
@@ -182,18 +203,33 @@ def convert(
     logger.success("See {} for converted audio.".format(output_path.as_posix()))
 
 
-def get_audio_files(input_path: pathlib.Path) -> Sequence[pathlib.Path]:
+def get_audio_files(input_path: pathlib.Path, after_date: Optional[datetime.datetime]=None) -> Sequence[pathlib.Path]:
     """
     Recursively get audio files within the input_path.
+    If after_date is specified, only include files created or modified after this date.
     """
     audio_files = []
     for input_file in input_path.iterdir():
-        if input_file.is_file() and input_file.suffix.lower() in AUDIO_EXTENSIONS_SET:
+        if input_file.is_file() and should_convert_file(input_file, after_date):
             audio_files.append(input_file)
         elif input_file.is_dir() and not input_file.is_symlink():
-            audio_files.extend(get_audio_files(input_file))
+            audio_files.extend(get_audio_files(input_file, after_date))
     return audio_files
 
+def should_convert_file(input_file: pathlib.Path, after_date: Optional[datetime.datetime]=None) -> bool:
+    """
+    Check if a given file should be converted
+    """
+    if not input_file.suffix.lower() in AUDIO_EXTENSIONS_SET:
+        # Wrong file type
+        return False
+    if after_date is not None:
+        # Check file date
+        file_stats = os.stat(input_file)
+        file_date = datetime.datetime.fromtimestamp(max(file_stats.st_ctime, file_stats.st_mtime))
+        if file_date <= after_date:
+            return False
+    return True
 
 def converter(conversion_job: ConversionJob):
     """
