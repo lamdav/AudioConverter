@@ -2,11 +2,14 @@ import datetime
 import os
 import pathlib
 import sys
+from dataclasses import dataclass, field
 from multiprocessing import Pool
 from typing import Optional, Sequence
 
 import click
 from pydub import AudioSegment, utils
+
+import xml.etree.ElementTree as ET
 
 AUDIO_EXTENSIONS = [
     ".aiff",
@@ -19,6 +22,7 @@ AUDIO_EXTENSIONS = [
     ".opus",
 ]
 AUDIO_EXTENSIONS_SET = set(AUDIO_EXTENSIONS)
+PLAYLIST_EXTENSIONS_SET = set([".m3u", ".pls", ".xspf", ".asx"])
 CODEC = [
     "pcm_mulaw",
 ]
@@ -101,6 +105,21 @@ class ConversionJob(object):
         self.output_path = output_path
         self.file_path = file_path
         self.logger = logger if logger is not None else Logger()
+
+@dataclass
+class PlaylistJob:
+    """
+    Details related to playlist conversion jobs
+    """
+    verbose: bool
+    input_root: pathlib.Path
+    output_root: pathlib.Path
+    file_path: pathlib.Path
+    file_output_path: pathlib.Path
+    flatten: bool
+    output_format: str = field(default=None)
+    logger: Logger = field(default_factory=Logger)
+    prefix: str = field(default=None)
 
 
 @click.group()
@@ -188,7 +207,7 @@ def convert(
         )
         output_path.mkdir(exist_ok=True)
 
-    audio_files = get_audio_files(input_path, after_date)
+    audio_files = get_files(input_path, is_convertable_audio_file, after_date=after_date)
     audio_files = [
         ConversionJob(
             output_format=output_format,
@@ -215,20 +234,20 @@ def get_output_path(input_path: pathlib.Path, output_path: pathlib.Path, file_pa
     return output_path.joinpath(*file_partial_path)
 
 
-def get_audio_files(input_path: pathlib.Path, after_date: Optional[datetime.datetime]=None) -> Sequence[pathlib.Path]:
+def get_files(input_path: pathlib.Path, file_validator: callable, **kwargs) -> Sequence[pathlib.Path]:
     """
     Recursively get audio files within the input_path.
     If after_date is specified, only include files created or modified after this date.
     """
     audio_files = []
     for input_file in input_path.iterdir():
-        if input_file.is_file() and should_convert_file(input_file, after_date):
+        if input_file.is_file() and file_validator(input_file, **kwargs):
             audio_files.append(input_file)
         elif input_file.is_dir() and not input_file.is_symlink():
-            audio_files.extend(get_audio_files(input_file, after_date))
+            audio_files.extend(get_files(input_file, file_validator, **kwargs))
     return audio_files
 
-def should_convert_file(input_file: pathlib.Path, after_date: Optional[datetime.datetime]=None) -> bool:
+def is_convertable_audio_file(input_file: pathlib.Path, after_date: Optional[datetime.datetime]=None) -> bool:
     """
     Check if a given file should be converted
     """
@@ -293,3 +312,182 @@ def get_parameters(output_format: str, codec: Optional[str]) -> Optional[Sequenc
     if codec == "pcm_mulaw":
         return ["-ar", "8000"]
     return None
+
+@cli.command()
+@click.argument(
+    "input_directory",
+    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=str),
+)
+@click.argument(
+    "output_directory", type=click.Path(file_okay=False, dir_okay=True, path_type=str)
+)
+@click.option(
+    "--output-format",
+    "-o",
+    type=click.Choice(AUDIO_EXTENSIONS),
+    help="Assume output audio files are in this format (default: autodetect)"
+)
+@click.option(
+    "--prefix",
+    type=click.Path(file_okay=False, dir_okay=True, path_type=str),
+    help="Add this prefix to all paths in output files"
+)
+@click.option(
+    "--workers", "-w", type=int, default=5, help="Number of worker processes to run"
+)
+@click.option("--flat", type=bool, is_flag=True, help="Flatten directory structure")
+@click.pass_obj
+def playlists(
+    config: Config,
+    input_directory: str,
+    output_directory: str,
+    output_format: Optional[str],
+    prefix: Optional[str],
+    workers: int,
+    flat: bool
+):
+    """
+    Copy all playlists in input_directory to output_directory, with updated paths
+    """
+    logger = config.logger
+    logger.info("Starting conversion of {}.".format(input_directory))
+
+    input_root = pathlib.Path(input_directory)
+    output_root = pathlib.Path(output_directory)
+
+    logger.verbose("Input : {}".format(input_root.as_posix()), config.verbose)
+    logger.verbose("Output: {}".format(output_root.as_posix()), config.verbose)
+    logger.verbose("Workers: {}".format(workers), config.verbose)
+
+    if not output_root.exists():
+        logger.verbose(
+            "Creating output directory {}".format(output_root.as_posix()),
+            config.verbose,
+        )
+        output_root.mkdir(exist_ok=True)
+    
+    playlist_files = get_files(input_root, is_playlist_file)
+    playlist_conversions = [
+        PlaylistJob(
+            verbose=config.verbose,
+            input_root=input_root,
+            output_root=output_root,
+            file_path=file_path,
+            file_output_path=get_output_path(input_root, output_root, file_path, not flat),
+            flatten=flat,
+            output_format=output_format,
+            logger=logger,
+            prefix=prefix,
+        )
+        for file_path in playlist_files
+    ]
+
+    with Pool(processes=workers) as worker:
+        worker.map(playlist_converter, playlist_conversions)
+    
+    logger.success("See {} for converted playlists.".format(output_root.as_posix()))
+
+
+
+def is_playlist_file(input_file: pathlib.Path) -> bool:
+    return input_file.suffix.lower() in PLAYLIST_EXTENSIONS_SET
+
+def playlist_converter(job: PlaylistJob):
+    logger = job.logger
+    suffix = job.file_path.suffix
+
+    if suffix == ".m3u":
+        playlist_converter_m3u(job)
+    elif suffix == ".pls":
+        playlist_converter_pls(job)
+    elif suffix == ".xspf":
+        playlist_converter_xspf(job)
+    elif suffix == ".asx":
+        playlist_converter_asx(job)
+
+def playlist_converter_m3u(job: PlaylistJob):
+    logger = job.logger
+    logger.verbose("Converting M3U playlist {}".format(job.file_path), job.verbose)
+
+    with open(job.file_output_path.joinpath(job.file_path.name), 'w') as out_playlist:
+        with open(job.file_path, 'r') as in_playlist:
+            for line in in_playlist:
+                if line.startswith("#"):
+                    # Copy comments (including EXTM3U) as-is
+                    out_playlist.write(line)
+                else:
+                    out_playlist.write(str(find_playlist_target(line.strip(), job)) + '\n')
+
+def playlist_converter_pls(job: PlaylistJob):
+    logger = job.logger
+    logger.verbose("Converting PLS playlist {}".format(job.file_path), job.verbose)
+
+    with open(job.file_output_path.joinpath(job.file_path.name), 'w') as out_playlist:
+        with open(job.file_path, 'r') as in_playlist:
+            for line in in_playlist:
+                if not line.startswith("File"):
+                    # Copy all non-file lines as-is
+                    out_playlist.write(line)
+                else:
+                    key, original_path = line.strip().split("=")
+                    out_playlist.write(key + "=" + str(find_playlist_target(original_path, job)) + '\n')
+
+def playlist_converter_xspf(job: PlaylistJob):
+    logger = job.logger
+    logger.verbose("Converting XSPF playlist {}".format(job.file_path), job.verbose)
+
+    ET.register_namespace('', "http://xspf.org/ns/0/")
+    playlist_file = ET.parse(job.file_path)
+    namespaces = {"": "http://xspf.org/ns/0/"}
+    tracklist = playlist_file.getroot().find("trackList", namespaces)
+    for track in tracklist.findall("track", namespaces):
+        location = track.find("location", namespaces)
+        location.text = str(find_playlist_target(location.text, job))
+    
+    playlist_file.write(
+        job.file_output_path.joinpath(job.file_path.name),
+        'utf-8',
+        True,
+    )
+
+def playlist_converter_asx(job: PlaylistJob):
+    logger = job.logger
+    logger.verbose("Converting ASX playlist {}".format(job.file_path), job.verbose)
+
+    playlist_file = ET.parse(job.file_path)
+    for entry in playlist_file.getroot().findall("entry"):
+        ref = entry.find("ref")
+        ref.attrib["href"] = str(find_playlist_target(ref.attrib["href"], job))
+    
+    playlist_file.write(job.file_output_path.joinpath(job.file_path.name))
+
+def find_playlist_target(original_file_path: pathlib.Path, job: PlaylistJob) -> pathlib.Path:
+    """
+    Find the target of a playlist item after conversion
+
+    Expects an absolute path or a path relative to the input_root
+    Replaces it with a path relative to the output root, with a prefix if specified.
+    If an output format is set, the file suffix is replaced with this.
+    Otherwise, we search for files with the same name in the expected location and use the first one matching a known audio format.
+    If no matching file is present, the original filename is used as specified in the playlist
+    """
+
+    # TODO: Handle encoded paths for M3U and PLS files
+
+    if original_file_path.startswith("/"):
+        original_file_path = job.input_root.joinpath(original_file_path)
+    
+    new_directory = pathlib.Path(*original_file_path.parts[len(job.input_root.parts):-1])
+    original_file_name = original_file_path.name
+    new_file_path = new_directory.joinpath(original_file_path.name) # Fallback - original file name in new location
+    
+    if (job.output_format is None):
+        possible_files = job.output_root.joinpath(new_directory).glob(original_file_path.stem + ".*")
+        for f in possible_files:
+            if f.suffix in AUDIO_EXTENSIONS_SET:
+                new_file_path = new_directory.joinpath(original_file_name).with_suffix(f.suffix)
+                break
+    else:
+        new_file_path = new_directory.joinpath(original_file_name).with_suffix(job.output_format)
+    
+    return new_file_path
