@@ -31,6 +31,8 @@ CODEC_SET = set(CODEC)
 
 ENCODED_PATH_SAFE_CHARS = '/ ()+,&';
 
+SYNC_FILE_NAME = '.AudioConverterLastSync'
+
 
 class Logger(object):
     def success(self, message: str):
@@ -500,3 +502,77 @@ def find_playlist_target(original_file_path: pathlib.Path, job: PlaylistJob) -> 
         new_file_path = new_directory.joinpath(original_file_name).with_suffix(job.output_format)
     
     return new_file_path
+
+@cli.command()
+@click.argument(
+    "input_directory",
+    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=str),
+)
+@click.argument(
+    "output_directory", type=click.Path(file_okay=False, dir_okay=True, path_type=str)
+)
+@click.option(
+    "--output-format",
+    "-o",
+    type=click.Choice(AUDIO_EXTENSIONS),
+    default=".mp3",
+    help="Target output format",
+)
+@click.option(
+    "--codec",
+    "-c",
+    type=click.Choice(CODEC),
+    default=None,
+    help="Codec to covert to",
+)
+@click.option(
+    "--workers", "-w", type=int, default=5, help="Number of worker processes to run"
+)
+@click.option("--flat", type=bool, is_flag=True, help="Flatten directory structure")
+@click.pass_obj
+@click.pass_context
+def sync(
+    ctx: click.Context,
+    config: Config,
+    input_directory: str,
+    output_directory: str,
+    output_format: Optional[str],
+    codec: Optional[str],
+    workers: int,
+    flat: bool
+):
+    """
+    Convert all files that have changed since the last sync, and update playlists
+
+    Stores a marker file at the root of input_directory indicating the time of the last sync
+    """
+    logger = config.logger
+
+    last_sync_start = None
+    this_sync_start = datetime.datetime.now
+    sync_file_path = pathlib.Path(input_directory).joinpath(SYNC_FILE_NAME);
+    sync_file_contents = dict()
+
+    if (sync_file_path.is_file()):
+        with open(sync_file_path, 'r') as sync_file:
+            for line in sync_file:
+                out_dir, start = line.split(":")
+                sync_file_contents[out_dir] = start
+                if out_dir == output_directory:
+                    last_sync_start = datetime.datetime.fromisoformat(start)
+    
+    if last_sync_start is None:
+        logger.info("First synchronisation, all files will be converted.")
+        after = None
+    else:
+        logger.info("Synchronising changes since {}".format(last_sync_start.strftime("%c")))
+        after = last_sync_start.time()
+
+    ctx.forward(convert, after=after)
+    ctx.format(playlists)
+
+    # After successfully completing, update the last sync start
+    with open(sync_file_path, 'w') as sync_file:
+        for out_dir, start in sync_file_contents.items():
+            sync_file.write("{}:{}".format(out_dir, start))
+
