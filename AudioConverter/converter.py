@@ -5,6 +5,7 @@ import sys
 from dataclasses import dataclass, field
 from multiprocessing import Pool
 from typing import Optional, Sequence
+from urllib.parse import quote, unquote
 
 import click
 from pydub import AudioSegment, utils
@@ -27,6 +28,8 @@ CODEC = [
     "pcm_mulaw",
 ]
 CODEC_SET = set(CODEC)
+
+ENCODED_PATH_SAFE_CHARS = '/ ()+,&';
 
 
 class Logger(object):
@@ -416,7 +419,10 @@ def playlist_converter_m3u(job: PlaylistJob):
                     # Copy comments (including EXTM3U) as-is
                     out_playlist.write(line)
                 else:
-                    out_playlist.write(str(find_playlist_target(line.strip(), job)) + '\n')
+                    decoded_original_path = unquote(line.strip())
+                    new_path = str(find_playlist_target(decoded_original_path, job))
+                    encoded_path = quote(new_path, ENCODED_PATH_SAFE_CHARS)
+                    out_playlist.write(encoded_path + '\n')
 
 def playlist_converter_pls(job: PlaylistJob):
     logger = job.logger
@@ -430,7 +436,10 @@ def playlist_converter_pls(job: PlaylistJob):
                     out_playlist.write(line)
                 else:
                     key, original_path = line.strip().split("=")
-                    out_playlist.write(key + "=" + str(find_playlist_target(original_path, job)) + '\n')
+                    decoded_original_path = unquote(original_path)
+                    new_path = str(find_playlist_target(decoded_original_path, job))
+                    encoded_path = quote(new_path, ENCODED_PATH_SAFE_CHARS)
+                    out_playlist.write(key + "=" + encoded_path + '\n')
 
 def playlist_converter_xspf(job: PlaylistJob):
     logger = job.logger
