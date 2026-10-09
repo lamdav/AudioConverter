@@ -291,13 +291,21 @@ def converter(conversion_job: ConversionJob):
     audio_file = conversion_job.file_path
     audio_name = audio_file.name[: audio_file.name.rfind(".")]
     converted_name = "{}.{}".format(audio_name, output_format)
+    output_name = output_path.joinpath(converted_name)
+
+    if output_name.exists():
+        # If the output file was last modified after the input file, assume it's up to date
+        output_stats = os.stat(output_name)
+        input_stats = os.stat(audio_file)
+        if output_stats.st_mtime > input_stats.st_mtime:
+            logger.verbose("{} already converted". format(audio_name), verbose_flag)
+            return
 
     logger.verbose(
         "Converting {} to {}".format(audio_name, output_format), verbose_flag
     )
     audio = AudioSegment.from_file(audio_file.as_posix(), audio_file.suffix[1:])
     metadata = utils.mediainfo(audio_file.as_posix())
-    output_name = output_path.joinpath(converted_name)
     parameters = get_parameters(output_format, codec)
     output_path.mkdir(parents=True, exist_ok=True)
 
