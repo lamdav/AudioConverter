@@ -184,7 +184,7 @@ def convert(
     Convert Input Directory Audio to Output Directory Audio
     """
     logger = config.logger
-    logger.info("Starting conversion of {}.".format(input_directory))
+    logger.info("Starting conversion of audio files in {}.".format(input_directory))
 
     input_path = pathlib.Path(input_directory)
     output_path = pathlib.Path(output_directory)
@@ -357,13 +357,14 @@ def playlists(
     output_format: Optional[str],
     prefix: Optional[str],
     workers: int,
-    flat: bool
+    flat: bool,
+    **kwargs: Optional[dict]
 ):
     """
     Copy all playlists in input_directory to output_directory, with updated paths
     """
     logger = config.logger
-    logger.info("Starting conversion of {}.".format(input_directory))
+    logger.info("Starting conversion of playlists in {}.".format(input_directory))
 
     input_root = pathlib.Path(input_directory)
     output_root = pathlib.Path(output_directory)
@@ -557,30 +558,34 @@ def sync(
     logger = config.logger
 
     last_sync_start = None
-    this_sync_start = datetime.datetime.now
+    this_sync_start = datetime.datetime.now()
     sync_file_path = pathlib.Path(input_directory).joinpath(SYNC_FILE_NAME);
     sync_file_contents = dict()
 
     if (sync_file_path.is_file()):
-        with open(sync_file_path, 'r') as sync_file:
-            for line in sync_file:
-                out_dir, start = line.split(":")
-                sync_file_contents[out_dir] = start
-                if out_dir == output_directory:
-                    last_sync_start = datetime.datetime.fromisoformat(start)
+        try:
+            with open(sync_file_path, 'r') as sync_file:
+                for line in sync_file:
+                    out_dir, start = line.split("::")
+                    sync_file_contents[out_dir] = start
+                    if out_dir == output_directory:
+                        last_sync_start = datetime.datetime.fromisoformat(start)
+        except:
+            logger.info("Couldn't read last sync start. Will convert all files.")
     
     if last_sync_start is None:
         logger.info("First synchronisation, all files will be converted.")
         after = None
     else:
         logger.info("Synchronising changes since {}".format(last_sync_start.strftime("%c")))
-        after = last_sync_start.time()
+        after = last_sync_start.isoformat()
 
     ctx.forward(convert, after=after)
-    ctx.format(playlists)
+    ctx.forward(playlists)
 
     # After successfully completing, update the last sync start
     with open(sync_file_path, 'w') as sync_file:
+        sync_file_contents[output_directory] = this_sync_start.isoformat()
         for out_dir, start in sync_file_contents.items():
-            sync_file.write("{}:{}".format(out_dir, start))
+            sync_file.write("{}::{}".format(out_dir, start))
 
