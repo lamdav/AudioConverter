@@ -4,6 +4,7 @@ import pathlib
 import sys
 from dataclasses import dataclass, field
 from multiprocessing import Pool
+import shutil
 from typing import Optional, Sequence
 from urllib.parse import quote, unquote
 
@@ -93,6 +94,7 @@ class ConversionJob(object):
         "output_path",
         "file_path",
         "logger",
+        "with_sidecars",
     ]
 
     def __init__(
@@ -103,6 +105,7 @@ class ConversionJob(object):
         output_path: pathlib.Path,
         file_path: pathlib.Path,
         logger: Optional[Logger] = None,
+        with_sidecars: bool = False
     ):
         self.output_format = output_format
         self.codec = codec
@@ -110,6 +113,7 @@ class ConversionJob(object):
         self.output_path = output_path
         self.file_path = file_path
         self.logger = logger if logger is not None else Logger()
+        self.with_sidecars = with_sidecars
 
 @dataclass
 class PlaylistJob:
@@ -168,6 +172,13 @@ def cli(context: click.Context, verbose: bool):
     "-d",
     help="Convert files created or modified after this date (ISO 8601 format or POSIX timestamp)"
 )
+@click.option(
+    "--with-sidecars",
+    "-s",
+    help="Copy sidecar files with converted audio",
+    type=bool,
+    is_flag=True
+)
 @click.option("--flat", type=bool, is_flag=True, help="Flatten directory structure")
 @click.pass_obj
 def convert(
@@ -178,6 +189,7 @@ def convert(
     codec: Optional[str],
     workers: int,
     after: Optional[str],
+    with_sidecars: bool,
     flat: bool
 ):
     """
@@ -221,6 +233,7 @@ def convert(
             output_path=get_output_path(input_path, output_path, file_path, not flat),
             file_path=file_path,
             logger=logger,
+            with_sidecars=with_sidecars
         )
         for file_path in audio_files
     ]
@@ -292,6 +305,15 @@ def converter(conversion_job: ConversionJob):
     audio_name = audio_file.name[: audio_file.name.rfind(".")]
     converted_name = "{}.{}".format(audio_name, output_format)
     output_name = output_path.joinpath(converted_name)
+
+    # Copy any sidecar files (files with the same name but not an audio extension)
+    if conversion_job.with_sidecars:
+        sidecars = audio_file.parent.glob("{}.*".format(audio_name))
+        for sc in sidecars:
+            if sc.suffix in AUDIO_EXTENSIONS_SET | PLAYLIST_EXTENSIONS_SET:
+                continue
+            shutil.copy(sc, output_path)
+            logger.verbose("Copied sidecar file {}".format(sc.name), verbose_flag)
 
     if output_name.exists():
         # If the output file was last modified after the input file, assume it's up to date
@@ -535,6 +557,13 @@ def find_playlist_target(original_file_path: pathlib.Path, job: PlaylistJob) -> 
     help="Codec to covert to",
 )
 @click.option(
+    "--with-sidecars",
+    "-s",
+    help="Copy sidecar files with converted audio",
+    type=bool,
+    is_flag=True
+)
+@click.option(
     "--workers", "-w", type=int, default=5, help="Number of worker processes to run"
 )
 @click.option("--flat", type=bool, is_flag=True, help="Flatten directory structure")
@@ -547,6 +576,7 @@ def sync(
     output_directory: str,
     output_format: Optional[str],
     codec: Optional[str],
+    with_sidecars: bool,
     workers: int,
     flat: bool
 ):
